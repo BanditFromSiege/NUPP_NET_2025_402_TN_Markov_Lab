@@ -1,0 +1,14 @@
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\bin\Debug\net8.0\MilitaryVehicles.console.exe
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\bin\Debug\net8.0\MilitaryVehicles.console.deps.json
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\bin\Debug\net8.0\MilitaryVehicles.console.runtimeconfig.json
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\bin\Debug\net8.0\MilitaryVehicles.console.dll
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\bin\Debug\net8.0\MilitaryVehicles.console.pdb
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.GeneratedMSBuildEditorConfig.editorconfig
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.AssemblyInfoInputs.cache
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.AssemblyInfo.cs
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.csproj.CoreCompileInputs.cache
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.dll
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\refint\MilitaryVehicles.console.dll
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.pdb
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.genruntimeconfig.cache
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\ref\MilitaryVehicles.console.dll

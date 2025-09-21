@@ -12,7 +12,7 @@ namespace MilitaryVehicles.common
         //Статичний конструктор
         static GroundVehicle()
         {
-            Console.WriteLine("Створено новий клас GroundVehicle");
+            Console.WriteLine("Статичний конструктор. Створено новий клас GroundVehicle");
         }
 
         //Конструктор

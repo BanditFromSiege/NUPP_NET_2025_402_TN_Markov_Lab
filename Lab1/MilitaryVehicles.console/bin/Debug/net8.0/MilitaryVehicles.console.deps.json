@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "MilitaryVehicles.console/1.0.0": {
+        "runtime": {
+          "MilitaryVehicles.console.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MilitaryVehicles.console/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

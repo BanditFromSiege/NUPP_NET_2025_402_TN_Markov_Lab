@@ -12,7 +12,7 @@ namespace MilitaryVehicles.common
         //Статичний конструктор
         static SeaVehicle()
         {
-            Console.WriteLine("Створено новий клас SeaVehicle");
+            Console.WriteLine("Статичний конструктор. Створено новий клас SeaVehicle");
         }
 
         //Конструктор
@@ -21,7 +21,7 @@ namespace MilitaryVehicles.common
         //Перевизначення методу для запуску двигуна
         public override void StartEngine()
         {
-            Console.WriteLine($"Двигун морського транспортного засобу {Model} з ідентифікатором {Id} заведений");
+            Console.WriteLine($"Двигун морського транспортного засобу {Model} з ідентифікатором {Id} заведено");
         }
     }
 }

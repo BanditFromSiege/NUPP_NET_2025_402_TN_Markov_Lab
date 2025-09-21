@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilitaryVehicles.common", "MilitaryVehicles.common\MilitaryVehicles.common.csproj", "{F7747E38-B4C6-43CC-BB91-BC41F128FCBF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MilitaryVehicles", "MilitaryVehicles", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MilitaryVehicles.common", "MilitaryVehicles.common", "{7E084072-E6EF-4105-ADC8-77D1FD59A8EA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MilitaryVehicles.console", "MilitaryVehicles.console", "{68EA8034-ACAA-4A2A-ABE2-82DAB0D352CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilitaryVehicles.console", "MilitaryVehicles.console\MilitaryVehicles.console.csproj", "{178889FE-FBCA-4D7F-BFDA-A159A797EFB2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F7747E38-B4C6-43CC-BB91-BC41F128FCBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7747E38-B4C6-43CC-BB91-BC41F128FCBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7747E38-B4C6-43CC-BB91-BC41F128FCBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7747E38-B4C6-43CC-BB91-BC41F128FCBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{178889FE-FBCA-4D7F-BFDA-A159A797EFB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{178889FE-FBCA-4D7F-BFDA-A159A797EFB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{178889FE-FBCA-4D7F-BFDA-A159A797EFB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{178889FE-FBCA-4D7F-BFDA-A159A797EFB2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F7747E38-B4C6-43CC-BB91-BC41F128FCBF} = {7E084072-E6EF-4105-ADC8-77D1FD59A8EA}
+		{7E084072-E6EF-4105-ADC8-77D1FD59A8EA} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+		{68EA8034-ACAA-4A2A-ABE2-82DAB0D352CE} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+		{178889FE-FBCA-4D7F-BFDA-A159A797EFB2} = {68EA8034-ACAA-4A2A-ABE2-82DAB0D352CE}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7413BCC0-C28A-4CC2-BA16-08F8B70560F7}
+	EndGlobalSection
+EndGlobal

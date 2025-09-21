@@ -1,6 +1,4 @@
-D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\bin\Debug\net8.0\MilitaryVehicles.common.exe
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\bin\Debug\net8.0\MilitaryVehicles.common.deps.json
-D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\bin\Debug\net8.0\MilitaryVehicles.common.runtimeconfig.json
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\bin\Debug\net8.0\MilitaryVehicles.common.dll
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\bin\Debug\net8.0\MilitaryVehicles.common.pdb
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\obj\Debug\net8.0\MilitaryVehicles.common.GeneratedMSBuildEditorConfig.editorconfig
@@ -10,5 +8,4 @@ D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\obj\Debug\net8.0\MilitaryVe
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\obj\Debug\net8.0\MilitaryVehicles.common.dll
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\obj\Debug\net8.0\refint\MilitaryVehicles.common.dll
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\obj\Debug\net8.0\MilitaryVehicles.common.pdb
-D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\obj\Debug\net8.0\MilitaryVehicles.common.genruntimeconfig.cache
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.common\obj\Debug\net8.0\ref\MilitaryVehicles.common.dll

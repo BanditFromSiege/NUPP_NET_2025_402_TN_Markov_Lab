@@ -12,3 +12,7 @@ D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\refint\Mi
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.pdb
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.genruntimeconfig.cache
 D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\ref\MilitaryVehicles.console.dll
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\bin\Debug\net8.0\MilitaryVehicles.common.dll
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\bin\Debug\net8.0\MilitaryVehicles.common.pdb
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\MilitaryVehicles.console.csproj.AssemblyReference.cache
+D:\C# коды\NET_Labs\Lab1\MilitaryVehicles.console\obj\Debug\net8.0\Military.899A2458.Up2Date

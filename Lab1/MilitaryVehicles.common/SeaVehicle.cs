@@ -22,6 +22,7 @@ namespace MilitaryVehicles.common
         public override void StartEngine()
         {
             Console.WriteLine($"Двигун морського транспортного засобу {Model} з ідентифікатором {Id} заведено");
+            OnEngineStarted();
         }
     }
 }

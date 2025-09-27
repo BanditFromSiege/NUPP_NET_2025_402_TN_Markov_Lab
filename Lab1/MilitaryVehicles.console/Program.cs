@@ -1,4 +1,5 @@
 ﻿using MilitaryVehicles.common;
+using System.Reflection;
 using System.Threading.Tasks;
 
 class Program
@@ -45,8 +46,19 @@ class Program
 
         Console.WriteLine();
 
+        SovietTanks[0].EngineStarted += (sender) => 
+            Console.WriteLine($"Час запуску {sender.Model}: {DateTime.Now}");
+
         SovietTanks[0].StartEngine();
+
+        SovietHelicopters[0].EngineStarted += (sender) =>
+            Console.WriteLine($"Час запуску {sender.Model}: {DateTime.Now}");
+
         SovietHelicopters[0].StartEngine();
+
+        SovietDestroyers[0].EngineStarted += (sender) =>
+            Console.WriteLine($"Час запуску {sender.Model}: {DateTime.Now}");
+
         SovietDestroyers[0].StartEngine();
 
         Console.WriteLine();
@@ -95,6 +107,10 @@ class Program
         }
         Console.WriteLine();
 
+        Console.WriteLine($"Всього створено техніки: { MilitaryVehicle.GetVehicleCount() }");
+
+        Console.WriteLine();
+
         try
         {
             var foundTank = CrudService.Read(SovietTanks[0].Id);
@@ -114,7 +130,7 @@ class Program
         int i = 0;
         foreach (var el in CrudService.ReadAll())
         {
-            Console.WriteLine($"{el.GetType().Name}: {el.Model}, ідентифікатор: {el.Id}");
+            el.PrintInfo();
             ++i;
             if (i % 3 == 0)
             {

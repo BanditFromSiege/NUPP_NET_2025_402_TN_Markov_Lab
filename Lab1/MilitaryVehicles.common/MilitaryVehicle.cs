@@ -11,6 +11,13 @@ namespace MilitaryVehicles.common
         public Guid Id { get; set; } //Унікальний ідентифікатор
         public string Model { get; set; } //Модель транспортного засобу
 
+        private static uint vehicleCount = 0; //Статичне поле для підрахунку створених ТС
+
+        // Делегат для події запуску двигуна
+        public delegate void EngineStartedHandler(MilitaryVehicle sender);
+
+        public event EngineStartedHandler? EngineStarted; //Подія запуску двигуна
+
         //Статичний конструктор
         static MilitaryVehicle()
         {
@@ -22,9 +29,22 @@ namespace MilitaryVehicles.common
         {
             Id = Guid.NewGuid();
             Model = model;
+            vehicleCount++;
+        }
+
+        //Статичний метод для отримання кількості створених транспортних засобів
+        public static uint GetVehicleCount()
+        {
+            return vehicleCount;
         }
 
         //Абстрактний метод для запуску двигуна
         public abstract void StartEngine();
+
+        //Метод для виклику події
+        protected void OnEngineStarted()
+        {
+            EngineStarted?.Invoke(this);
+        }
     }
 }

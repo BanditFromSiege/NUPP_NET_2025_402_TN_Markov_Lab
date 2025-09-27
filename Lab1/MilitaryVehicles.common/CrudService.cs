@@ -6,54 +6,42 @@ using System.Threading.Tasks;
 
 namespace MilitaryVehicles.common
 {
-    public interface ICrudService<T> where T : MilitaryVehicle
-    {
-        void Create(T element);
-        T Read(Guid id);
-        IEnumerable<T> ReadAll();
-        void Update(T element);
-        void Remove(T element);
-    }
-
     public class CrudService<T> : ICrudService<T> where T : MilitaryVehicle
     {
-        private readonly List<T> elements = new List<T>();
+        private readonly Dictionary<Guid, T> elements = new Dictionary<Guid, T>();
 
         public void Create(T element)
         {
-            if (elements.Any(e => e.Id == element.Id))
+            if (elements.ContainsKey(element.Id))
             {
                 Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} вже існує");
                 return;
             }
 
-            elements.Add(element);
+            elements[element.Id] = element;
             Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} доданий");
         }
 
         public T Read(Guid id)
         {
-            T element = elements.FirstOrDefault(e => e.Id == id);
-
-            if (element == null)
+            if (elements.TryGetValue(id, out T element))
             {
-                throw new KeyNotFoundException($"Елемент з ідентифікатором {id} не знайдено");
+                return element;
             }
 
-            return element;
+            throw new KeyNotFoundException($"Елемент з ідентифікатором {id} не знайдено");
         }
 
         public IEnumerable<T> ReadAll()
         {
-            return elements;
+            return elements.Values;
         }
 
         public void Update(T element)
         {
-            var index = elements.FindIndex(e => e.Id == element.Id);
-            if (index != -1)
+            if (elements.ContainsKey(element.Id))
             {
-                elements[index] = element;
+                elements[element.Id] = element;
                 Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} оновлено");
             }
             else
@@ -64,11 +52,14 @@ namespace MilitaryVehicles.common
 
         public void Remove(T element)
         {
-            bool removed = elements.Remove(element);
-            if (removed)
+            if (elements.Remove(element.Id))
+            {
                 Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} видалено");
+            }
             else
+            {
                 Console.WriteLine($"Не вдалося знайти {element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} для видалення");
+            }
         }
     }
 }

@@ -1,44 +1,102 @@
 ﻿using MilitaryVehicles.common;
+using System.Collections.Concurrent;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-
-        var tank = new Tank("T-72");
-        var helicopter = new Helicopter("Mi-24");
-        var destroyer = new Destroyer("Project 7");
+        Console.OutputEncoding = Encoding.UTF8;
 
         var filePath = "vehicles.json";
         var crudServiceAsync = new CrudServiceAsync<MilitaryVehicle>(filePath);
 
-        Console.WriteLine();
+        int countPerType = 500;
 
-        await crudServiceAsync.CreateAsync(tank);
-        await crudServiceAsync.CreateAsync(helicopter);
-        await crudServiceAsync.CreateAsync(destroyer);
+        var tasks = new List<Task>();
 
-        Console.WriteLine();
+        ConcurrentBag<MilitaryVehicle> generatedVehicles = new();
 
+        //Створення танків
+        tasks.Add(Task.Run(() =>
+        {
+            Parallel.For(0, countPerType, _ =>
+            {
+                var tank = Tank.CreateRandom();
+                generatedVehicles.Add(tank);
+            });
+        }));
+
+        //Створення вертольотів
+        tasks.Add(Task.Run(() =>
+        {
+            Parallel.For(0, countPerType, _ =>
+            {
+                var helicopter = Helicopter.CreateRandom();
+                generatedVehicles.Add(helicopter);
+            });
+        }));
+
+        //Створення есмінців
+        tasks.Add(Task.Run(() =>
+        {
+            Parallel.For(0, countPerType, _ =>
+            {
+                var destroyer = Destroyer.CreateRandom();
+                generatedVehicles.Add(destroyer);
+            });
+        }));
+
+        //Дочекатися створення всіх об'єктів
+        await Task.WhenAll(tasks);
+
+        //Додати всі об'єкти у сервіс
+        foreach (var vehicle in generatedVehicles)
+        {
+            await crudServiceAsync.CreateAsync(vehicle);
+        }
+
+        Console.WriteLine("\nСтворено об'єктів: " + generatedVehicles.Count);
+
+        //Рахуємо статистику
         var allVehicles = await crudServiceAsync.ReadAllAsync();
-        foreach (var vehicle in allVehicles)
+
+        var tanks = allVehicles.OfType<Tank>().ToList();
+        var helicopters = allVehicles.OfType<Helicopter>().ToList();
+        var destroyers = allVehicles.OfType<Destroyer>().ToList();
+
+        Console.WriteLine("\nСтатистика:");
+
+        if (tanks.Any())
         {
-            vehicle.PrintInfo();
+            Console.WriteLine($"Танки ({tanks.Count}):");
+            Console.WriteLine($"Мін. вогнева міць: {tanks.Min(t => t.Firepower)}");
+            Console.WriteLine($"Макс. вогнева міць: {tanks.Max(t => t.Firepower)}");
+            Console.WriteLine($"Середня вогнева міць: {tanks.Average(t => t.Firepower):F2}");
         }
 
-        Console.WriteLine();
-
-        var paginatedVehicles = await crudServiceAsync.ReadAllAsync(1, 2);
-        foreach (var vehicle in paginatedVehicles)
+        if (helicopters.Any())
         {
-            vehicle.PrintInfo();
+            Console.WriteLine($"\nВертольоти ({helicopters.Count}):");
+            Console.WriteLine($"Мін. швидкість: {helicopters.Min(h => h.Speed)}");
+            Console.WriteLine($"Макс. швидкість: {helicopters.Max(h => h.Speed)}");
+            Console.WriteLine($"Середня швидкість: {helicopters.Average(h => h.Speed):F2}");
         }
 
-        Console.WriteLine();
+        if (destroyers.Any())
+        {
+            Console.WriteLine($"\nЕсмінці ({destroyers.Count}):");
+            Console.WriteLine($"Мін. к-сть торпед: {destroyers.Min(d => d.Torpedoes)}");
+            Console.WriteLine($"Макс. к-сть торпед: {destroyers.Max(d => d.Torpedoes)}");
+            Console.WriteLine($"Середня к-сть торпед: {destroyers.Average(d => d.Torpedoes):F2}");
+        }
 
-        await crudServiceAsync.RemoveAsync(tank);
+        Console.WriteLine("\nЗбереження у файл...");
+        await crudServiceAsync.SaveAsync();
+
+        Console.WriteLine("\nНатисніть, щоб завершити програму...");
+        Console.ReadLine();
     }
 }

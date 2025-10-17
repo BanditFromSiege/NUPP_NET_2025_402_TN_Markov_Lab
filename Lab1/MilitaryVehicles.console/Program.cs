@@ -6,6 +6,98 @@ using System.Threading.Tasks;
 
 class Program
 {
+    static void DemoLock()
+    {
+        object locker = new object();
+        int counter = 0;
+
+        Parallel.For(0, 1000, _ =>
+        {
+            lock (locker)
+            {
+                counter++;
+            }
+        });
+
+        Console.WriteLine($"[lock] Значення лічильника: {counter}");
+    }
+
+    static async Task DemoSemaphoreAsync()
+    {
+        var semaphore = new SemaphoreSlim(3);
+        var tasks = new List<Task>();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int localI = i;
+            tasks.Add(Task.Run(async () =>
+            {
+                await semaphore.WaitAsync();
+                Console.WriteLine($"[Semaphore] Завдання {localI} розпочато");
+                await Task.Delay(100);
+                Console.WriteLine($"[Semaphore] Завдання {localI} завершено");
+                semaphore.Release();
+            }));
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    static void DemoMonitor()
+    {
+        object monitorLock = new object();
+        int shared = 0;
+
+        Parallel.For(0, 1000, _ =>
+        {
+            bool lockTaken = false;
+            try
+            {
+                Monitor.Enter(monitorLock, ref lockTaken);
+                shared++;
+            }
+            finally
+            {
+                if (lockTaken)
+                {
+                    Monitor.Exit(monitorLock);
+                }
+            }
+        });
+
+        Console.WriteLine($"[Monitor] Спільне значення: {shared}");
+    }
+
+    static void DemoMutex()
+    {
+        using var mutex = new Mutex();
+
+        Parallel.For(0, 100, i =>
+        {
+            mutex.WaitOne();
+            Console.WriteLine($"[Mutex] Потік {i} увійшов у критичну секцію");
+            Thread.Sleep(10);
+            Console.WriteLine($"[Mutex] Потік {i} виходить із критичної секції");
+            mutex.ReleaseMutex();
+        });
+    }
+
+    static void DemoAutoResetEvent()
+    {
+        var autoResetEvent = new AutoResetEvent(false);
+
+        Task.Run(() =>
+        {
+            Console.WriteLine("[AutoResetEvent] Очікування сигналу...");
+            autoResetEvent.WaitOne();
+            Console.WriteLine("[AutoResetEvent] Сигнал отримано!");
+        });
+
+        Thread.Sleep(500);
+        Console.WriteLine("[AutoResetEvent] Надсилання сигналу...");
+        autoResetEvent.Set();
+    }
+
     static async Task Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
@@ -95,6 +187,31 @@ class Program
 
         Console.WriteLine("\nЗбереження у файл...");
         await crudServiceAsync.SaveAsync();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Lock...");
+        Console.ReadLine();
+
+        DemoLock();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Semaphore...");
+        Console.ReadLine();
+
+        await DemoSemaphoreAsync();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Monitor...");
+        Console.ReadLine();
+
+        DemoMonitor();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Mutex...");
+        Console.ReadLine();
+
+        DemoMutex();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування AutoResetEvent...");
+        Console.ReadLine();
+
+        DemoAutoResetEvent();
 
         Console.WriteLine("\nНатисніть, щоб завершити програму...");
         Console.ReadLine();

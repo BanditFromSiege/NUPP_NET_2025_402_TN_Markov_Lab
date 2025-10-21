@@ -17,5 +17,6 @@ namespace MilitaryVehicles.common
         Task<bool> UpdateAsync(T element);
         Task<bool> RemoveAsync(T element);
         Task<bool> SaveAsync();
+        Task<bool> LoadAsync();
     }
 }

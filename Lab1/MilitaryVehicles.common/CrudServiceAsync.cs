@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace MilitaryVehicles.common
 {
@@ -12,6 +11,7 @@ namespace MilitaryVehicles.common
     {
         private readonly ConcurrentDictionary<Guid, T> elements = new ConcurrentDictionary<Guid, T>();
         private readonly string filePath;
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         public CrudServiceAsync(string filePath)
         {
@@ -78,17 +78,79 @@ namespace MilitaryVehicles.common
 
         public async Task<bool> SaveAsync()
         {
+            await semaphore.WaitAsync();
             try
             {
-                string json = JsonSerializer.Serialize(elements.Values.ToList());
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Converters = { new MilitaryVehicleConverter() },
+                    PropertyNamingPolicy = null,
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var list = elements.Values.ToList();
+
+                string json = JsonSerializer.Serialize(list, options);
+
                 await File.WriteAllTextAsync(filePath, json);
                 Console.WriteLine("Дані збережені у файл");
+
                 return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Помилка при збереженні даних у файл: {ex.Message}");
                 return false;
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        public async Task<bool> LoadAsync()
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    var json = await File.ReadAllTextAsync(filePath);
+
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    options.Converters.Add(new MilitaryVehicleConverter());
+
+                    var loadedElements = JsonSerializer.Deserialize<List<T>>(json, options);
+
+                    if (loadedElements != null)
+                    {
+                        elements.Clear();
+                        foreach (var element in loadedElements)
+                        {
+                            elements[element.Id] = element;
+                        }
+                        Console.WriteLine("Дані завантажено з файлу");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Файл не знайдено, новий файл буде створено при збереженні");
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при завантаженні даних з файлу: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                semaphore.Release();
             }
         }
 

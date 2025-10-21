@@ -8,8 +8,8 @@ namespace MilitaryVehicles.common
 {
     public abstract class MilitaryVehicle
     {
-        public Guid Id { get; private set; } //Унікальний ідентифікатор
-        public string Model { get; private set; } //Модель транспортного засобу
+        public Guid Id { get; set; } //Унікальний ідентифікатор
+        public string Model { get; set; } //Модель транспортного засобу
 
         private static uint vehicleCount = 0; //Статичне поле для підрахунку створених ТС
 

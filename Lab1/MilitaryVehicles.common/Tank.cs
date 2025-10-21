@@ -8,7 +8,14 @@ namespace MilitaryVehicles.common
 {
     public class Tank : GroundVehicle
     {
-        public int Firepower { get; private set; }
+        public int Firepower { get; set; }
+        public string Type => "Tank";
+
+        //Конструткор за замовчуванням
+        public Tank() : base("Unknown")
+        {
+            Firepower = 0;
+        }
 
         //Конструктор
         public Tank(string model, int firepower = 100) : base(model)

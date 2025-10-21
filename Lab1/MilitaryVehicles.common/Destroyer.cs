@@ -8,7 +8,14 @@ namespace MilitaryVehicles.common
 {
     public class Destroyer : SeaVehicle
     {
-        public int Torpedoes { get; private set; }
+        public int Torpedoes { get; set; }
+        public string Type => "Destroyer";
+
+        //Конструткор за замовчуванням
+        public Destroyer() : base("Unknown")
+        {
+            Torpedoes = 0;
+        }
 
         //Конструктор
         public Destroyer(string model, int torpedoes = 12) : base(model)

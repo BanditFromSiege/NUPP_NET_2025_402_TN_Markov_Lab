@@ -8,7 +8,14 @@ namespace MilitaryVehicles.common
 {
     public class Helicopter : AirVehicle
     {
-        public int Speed { get; private set; }
+        public int Speed { get; set; }
+        public string Type => "Helicopter";
+
+        //Конструткор за замовчуванням
+        public Helicopter() : base("Unknown")
+        {
+            Speed = 0;
+        }
 
         //Конструктор
         public Helicopter(string model, int speed = 275) : base(model)

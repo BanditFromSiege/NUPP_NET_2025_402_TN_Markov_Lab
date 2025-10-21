@@ -1,142 +1,217 @@
 ﻿using MilitaryVehicles.common;
+using System.Collections.Concurrent;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 class Program
 {
-    static void Main(string[] args)
+    static void DemoLock()
     {
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        object locker = new object();
+        int counter = 0;
 
-        List<Tank> SovietTanks = new List<Tank> {
-            new Tank("T-72"),
-            new Tank("T-64"),
-            new Tank("T-80"),
-        };
-
-        List<Tank> USTanks = new List<Tank> {
-            new Tank("M1 Abrams"),
-            new Tank("M60 Patton"),
-            new Tank("M4 Sherman"),
-        };
-
-        List<Helicopter> SovietHelicopters = new List<Helicopter> {
-            new Helicopter("Mi-24"),
-            new Helicopter("Mi-8"),
-            new Helicopter("Ka-50"),
-        };
-
-        List<Helicopter> USHelicopters = new List<Helicopter> {
-            new Helicopter("UH-60 Black Hawk"),
-            new Helicopter("AH-64 Apache"),
-            new Helicopter("CH-47 Chinook"),
-        };
-
-        List<Destroyer> SovietDestroyers = new List<Destroyer> {
-            new Destroyer("Project 7"),
-            new Destroyer("Project 956"),
-            new Destroyer("Project 1155"),
-        };
-
-        List<Destroyer> USDestroyers = new List<Destroyer> {
-            new Destroyer("USS Arleigh Burke"),
-            new Destroyer("USS Kidd"),
-            new Destroyer("USS John Paul Jones"),
-        };
-
-        Console.WriteLine();
-
-        SovietTanks[0].EngineStarted += (sender) => 
-            Console.WriteLine($"Час запуску {sender.Model}: {DateTime.Now}");
-
-        SovietTanks[0].StartEngine();
-
-        SovietHelicopters[0].EngineStarted += (sender) =>
-            Console.WriteLine($"Час запуску {sender.Model}: {DateTime.Now}");
-
-        SovietHelicopters[0].StartEngine();
-
-        SovietDestroyers[0].EngineStarted += (sender) =>
-            Console.WriteLine($"Час запуску {sender.Model}: {DateTime.Now}");
-
-        SovietDestroyers[0].StartEngine();
-
-        Console.WriteLine();
-
-        SovietTanks[0].Fire();
-        SovietHelicopters[0].TakeOff();
-        SovietDestroyers[0].FireGuns();
-
-        Console.WriteLine();
-
-        var CrudService = new CrudService<MilitaryVehicle>();
-
-        foreach (var tank in SovietTanks)
+        Parallel.For(0, 1000, _ =>
         {
-            CrudService.Create(tank);
-        }
-        Console.WriteLine();
-
-        foreach (var tank in USTanks)
-        {
-            CrudService.Create(tank);
-        }
-        Console.WriteLine();
-
-        foreach (var chopper in SovietHelicopters)
-        {
-            CrudService.Create(chopper);
-        }
-        Console.WriteLine();
-
-        foreach (var chopper in USHelicopters)
-        {
-            CrudService.Create(chopper);
-        }
-        Console.WriteLine();
-
-        foreach (var destroyer in SovietDestroyers)
-        {
-            CrudService.Create(destroyer);
-        }
-        Console.WriteLine();
-
-        foreach (var destroyer in USDestroyers)
-        {
-            CrudService.Create(destroyer);
-        }
-        Console.WriteLine();
-
-        Console.WriteLine($"Всього створено техніки: { MilitaryVehicle.GetVehicleCount() }");
-
-        Console.WriteLine();
-
-        try
-        {
-            var foundTank = CrudService.Read(SovietTanks[0].Id);
-            Console.WriteLine($"Знайдено танк: {foundTank.Model} з ідентифікатором {foundTank.Id}\n");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
-
-        CrudService.Remove(SovietTanks[0]);
-
-        SovietTanks[1].Model = "T-34";
-        CrudService.Update(SovietTanks[1]);
-
-        Console.WriteLine("\nПерелік всієї техніки:");
-        int i = 0;
-        foreach (var el in CrudService.ReadAll())
-        {
-            el.PrintInfo();
-            ++i;
-            if (i % 3 == 0)
+            lock (locker)
             {
-                Console.WriteLine();
+                counter++;
             }
+        });
+
+        Console.WriteLine($"[lock] Значення лічильника: {counter}");
+    }
+
+    static async Task DemoSemaphoreAsync()
+    {
+        var semaphore = new SemaphoreSlim(3);
+        var tasks = new List<Task>();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int localI = i;
+            tasks.Add(Task.Run(async () =>
+            {
+                await semaphore.WaitAsync();
+                Console.WriteLine($"[Semaphore] Завдання {localI} розпочато");
+                await Task.Delay(100);
+                Console.WriteLine($"[Semaphore] Завдання {localI} завершено");
+                semaphore.Release();
+            }));
         }
+
+        await Task.WhenAll(tasks);
+    }
+
+    static void DemoMonitor()
+    {
+        object monitorLock = new object();
+        int shared = 0;
+
+        Parallel.For(0, 1000, _ =>
+        {
+            bool lockTaken = false;
+            try
+            {
+                Monitor.Enter(monitorLock, ref lockTaken);
+                shared++;
+            }
+            finally
+            {
+                if (lockTaken)
+                {
+                    Monitor.Exit(monitorLock);
+                }
+            }
+        });
+
+        Console.WriteLine($"[Monitor] Спільне значення: {shared}");
+    }
+
+    static void DemoMutex()
+    {
+        using var mutex = new Mutex();
+
+        Parallel.For(0, 100, i =>
+        {
+            mutex.WaitOne();
+            Console.WriteLine($"[Mutex] Потік {i} увійшов у критичну секцію");
+            Thread.Sleep(10);
+            Console.WriteLine($"[Mutex] Потік {i} виходить із критичної секції");
+            mutex.ReleaseMutex();
+        });
+    }
+
+    static void DemoAutoResetEvent()
+    {
+        var autoResetEvent = new AutoResetEvent(false);
+
+        Task.Run(() =>
+        {
+            Console.WriteLine("[AutoResetEvent] Очікування сигналу...");
+            autoResetEvent.WaitOne();
+            Console.WriteLine("[AutoResetEvent] Сигнал отримано!");
+        });
+
+        Thread.Sleep(500);
+        Console.WriteLine("[AutoResetEvent] Надсилання сигналу...");
+        autoResetEvent.Set();
+    }
+
+    static async Task Main(string[] args)
+    {
+        Console.OutputEncoding = Encoding.UTF8;
+
+        var filePath = "vehicles.json";
+        var crudServiceAsync = new CrudServiceAsync<MilitaryVehicle>(filePath);
+
+        int countPerType = 500;
+
+        var tasks = new List<Task>();
+
+        ConcurrentBag<MilitaryVehicle> generatedVehicles = new();
+
+        //Створення танків
+        tasks.Add(Task.Run(() =>
+        {
+            Parallel.For(0, countPerType, _ =>
+            {
+                var tank = Tank.CreateRandom();
+                generatedVehicles.Add(tank);
+            });
+        }));
+
+        //Створення вертольотів
+        tasks.Add(Task.Run(() =>
+        {
+            Parallel.For(0, countPerType, _ =>
+            {
+                var helicopter = Helicopter.CreateRandom();
+                generatedVehicles.Add(helicopter);
+            });
+        }));
+
+        //Створення есмінців
+        tasks.Add(Task.Run(() =>
+        {
+            Parallel.For(0, countPerType, _ =>
+            {
+                var destroyer = Destroyer.CreateRandom();
+                generatedVehicles.Add(destroyer);
+            });
+        }));
+
+        //Дочекатися створення всіх об'єктів
+        await Task.WhenAll(tasks);
+
+        //Додати всі об'єкти у сервіс
+        foreach (var vehicle in generatedVehicles)
+        {
+            await crudServiceAsync.CreateAsync(vehicle);
+        }
+
+        Console.WriteLine("\nСтворено об'єктів: " + generatedVehicles.Count);
+
+        //Рахуємо статистику
+        var allVehicles = await crudServiceAsync.ReadAllAsync();
+
+        var tanks = allVehicles.OfType<Tank>().ToList();
+        var helicopters = allVehicles.OfType<Helicopter>().ToList();
+        var destroyers = allVehicles.OfType<Destroyer>().ToList();
+
+        Console.WriteLine("\nСтатистика:");
+
+        if (tanks.Any())
+        {
+            Console.WriteLine($"Танки ({tanks.Count}):");
+            Console.WriteLine($"Мін. вогнева міць: {tanks.Min(t => t.Firepower)}");
+            Console.WriteLine($"Макс. вогнева міць: {tanks.Max(t => t.Firepower)}");
+            Console.WriteLine($"Середня вогнева міць: {tanks.Average(t => t.Firepower):F2}");
+        }
+
+        if (helicopters.Any())
+        {
+            Console.WriteLine($"\nВертольоти ({helicopters.Count}):");
+            Console.WriteLine($"Мін. швидкість: {helicopters.Min(h => h.Speed)}");
+            Console.WriteLine($"Макс. швидкість: {helicopters.Max(h => h.Speed)}");
+            Console.WriteLine($"Середня швидкість: {helicopters.Average(h => h.Speed):F2}");
+        }
+
+        if (destroyers.Any())
+        {
+            Console.WriteLine($"\nЕсмінці ({destroyers.Count}):");
+            Console.WriteLine($"Мін. к-сть торпед: {destroyers.Min(d => d.Torpedoes)}");
+            Console.WriteLine($"Макс. к-сть торпед: {destroyers.Max(d => d.Torpedoes)}");
+            Console.WriteLine($"Середня к-сть торпед: {destroyers.Average(d => d.Torpedoes):F2}");
+        }
+
+        Console.WriteLine("\nЗбереження у файл...");
+        await crudServiceAsync.SaveAsync();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Lock...");
+        Console.ReadLine();
+
+        DemoLock();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Semaphore...");
+        Console.ReadLine();
+
+        await DemoSemaphoreAsync();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Monitor...");
+        Console.ReadLine();
+
+        DemoMonitor();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування Mutex...");
+        Console.ReadLine();
+
+        DemoMutex();
+
+        Console.WriteLine("\nНатисніть, щоб перейти до прикладу користування AutoResetEvent...");
+        Console.ReadLine();
+
+        DemoAutoResetEvent();
 
         Console.WriteLine("\nНатисніть, щоб завершити програму...");
         Console.ReadLine();

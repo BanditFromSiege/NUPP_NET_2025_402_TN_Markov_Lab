@@ -7,6 +7,8 @@ namespace MilitaryVehicles.infrastructure
 {
     public class MilitaryVehiclesContext : DbContext
     {
+        //Конструктор за замовчуванням
+        public MilitaryVehiclesContext() { }
         //Конструктор — приймає параметри конфігурації (рядок підключення і т.д.)
         public MilitaryVehiclesContext(DbContextOptions<MilitaryVehiclesContext> options)
             : base(options) {}
@@ -90,6 +92,14 @@ namespace MilitaryVehicles.infrastructure
                       .IsRequired()
                       .HasMaxLength(100);
             });
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlite("Data Source=MilitaryVehiclesDB.sqlite");
+            }
         }
     }
 }

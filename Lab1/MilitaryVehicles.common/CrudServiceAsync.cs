@@ -10,7 +10,7 @@ using MilitaryVehicles.infrastructure.Models;
 
 namespace MilitaryVehicles.common
 {
-    public class CrudServiceAsync<T> : ICrudServiceAsync<T> where T : MilitaryVehicle
+    public class CrudServiceAsync<T> : ICrudServiceAsync<T> where T : MilitaryVehicleModel
     {
         private readonly IRepository<T> repository;
 

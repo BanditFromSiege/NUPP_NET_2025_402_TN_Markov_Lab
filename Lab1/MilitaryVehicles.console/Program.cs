@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MilitaryVehicles.common;
 using MilitaryVehicles.infrastructure;
+using MilitaryVehicles.infrastructure.Models;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
@@ -14,92 +15,212 @@ class Program
 
         //Створюємо контекст бази даних та репозиторій
         var options = new DbContextOptionsBuilder<MilitaryVehiclesContext>()
-            .UseSqlite("Data Source=MilitaryVehiclesDb.sqlite")
+            .UseSqlite("Data Source=MilitaryVehiclesDB.sqlite")
             .Options;
 
+        Console.WriteLine($"Шлях до бази: {Path.GetFullPath("MilitaryVehiclesDB.sqlite")}\n");
+
         using var context = new MilitaryVehiclesContext(options);
-        var repository = new Repository<MilitaryVehicle>(context);
-        var crudServiceAsync = new CrudServiceAsync<MilitaryVehicle>(repository);
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.EnsureCreatedAsync();
 
-        int countPerType = 10;
-        var tasks = new List<Task>();
-        ConcurrentBag<MilitaryVehicle> generatedVehicles = new();
+        // Репозиторій та CRUD-сервіс
+        var repository = new Repository<MilitaryVehicleModel>(context);
+        var crudServiceAsync = new CrudServiceAsync<MilitaryVehicleModel>(repository);
 
-        //Створення танків
-        tasks.Add(Task.Run(() =>
+        var army1 = new ArmyModel { 
+            Id = Guid.NewGuid(),
+            Name = "1st Division"
+        };
+
+        var army2 = new ArmyModel {
+            Id = Guid.NewGuid(),
+            Name = "2st Division"
+        };
+
+        context.Armies.AddRange(army1, army2);
+
+        var crew1 = new CrewMemberModel { 
+            Id = Guid.NewGuid(),
+            Name = "Jim Morrison",
+            Rank = "Sergeant"
+        };
+
+        var crew2 = new CrewMemberModel {
+            Id = Guid.NewGuid(),
+            Name = "Ian Curtis",
+            Rank = "Corporal"
+        };
+
+        var crew3 = new CrewMemberModel {
+            Id = Guid.NewGuid(),
+            Name = "John Lennon",
+            Rank = "Lieutenant"
+        
+        };
+
+        var crew4 = new CrewMemberModel {
+            Id = Guid.NewGuid(),
+            Name = "John Ritchie",
+            Rank = "Captain"
+        };
+
+        var crew5 = new CrewMemberModel {
+            Id = Guid.NewGuid(),
+            Name = "James Hendrix",
+            Rank = "Major"
+        };
+
+        context.CrewMembers.AddRange(crew1, crew2, crew3, crew4, crew5);
+
+        await context.SaveChangesAsync();
+
+        var vehicles = new List<MilitaryVehicleModel>
         {
-            Parallel.For(0, countPerType, _ =>
+            new TankModel {
+                Id = Guid.NewGuid(),
+                Model = "M1 Abrams",
+                Firepower = 120,
+                ArmyId = army1.Id,
+                CrewMembers = new List<CrewMemberModel> { crew1, crew2 }
+            },
+
+            new TankModel {
+                Id = Guid.NewGuid(),
+                Model = "T-72",
+                Firepower = 115,
+                ArmyId = army1.Id,
+                CrewMembers = new List<CrewMemberModel> { crew4 }
+            },
+
+            new TankModel {
+                Id = Guid.NewGuid(),
+                Model = "T-80",
+                Firepower = 120,
+                ArmyId = army1.Id,
+                CrewMembers = new List<CrewMemberModel> { crew5 }
+            },
+
+            new HelicopterModel {
+                Id = Guid.NewGuid(),
+                Model = "AH-64 Apache",
+                Speed = 293,
+                ArmyId = army1.Id,
+                CrewMembers = new List<CrewMemberModel> { crew3, crew1 }
+            },
+
+            new HelicopterModel {
+                Id = Guid.NewGuid(),
+                Model = "Mi-24",
+                Speed = 280,
+                ArmyId = army1.Id,
+                CrewMembers = new List<CrewMemberModel> { crew4 }
+            },
+
+            new HelicopterModel {
+                Id = Guid.NewGuid(),
+                Model = "UH-60 Black Hawk",
+                Speed = 295,
+                ArmyId = army1.Id,
+                CrewMembers = new List<CrewMemberModel> { crew2, crew5 }
+            },
+
+            new DestroyerModel {
+                Id = Guid.NewGuid(),
+                Model = "USS Arleigh Burke",
+                Torpedoes = 8,
+                ArmyId = army2.Id,
+                CrewMembers = new List<CrewMemberModel> { crew4, crew5 }
+            },
+
+            new DestroyerModel {
+                Id = Guid.NewGuid(),
+                Model = "USS Kidd",
+                Torpedoes = 8,
+                ArmyId = army2.Id,
+                CrewMembers = new List<CrewMemberModel> { crew3 }
+            },
+
+            new DestroyerModel {
+                Id = Guid.NewGuid(),
+                Model = "USS John Paul Jones",
+                Torpedoes = 6,
+                ArmyId = army2.Id,
+                CrewMembers = new List<CrewMemberModel> { crew2 }
+            },
+
+            new DestroyerModel {
+                Id = Guid.NewGuid(),
+                Model = "USS Hobart-class",
+                Torpedoes = 6,
+                ArmyId = army2.Id,
+                CrewMembers = new List<CrewMemberModel> { crew1, crew5 }
+            }
+        };
+
+        foreach (var v in vehicles)
+        {
+            await crudServiceAsync.CreateAsync(v);
+        }
+
+        Console.WriteLine("\nСтворені об'єкти у базі:\n");
+
+        var allVehicles = await context.MilitaryVehicles
+            .Include(v => v.Army)
+            .Include(v => v.CrewMembers)
+            .ToListAsync();
+
+        foreach (var v in allVehicles)
+        {
+            Console.WriteLine($"Тип: {v.GetType().Name}");
+            Console.WriteLine($"Модель: {v.Model}");
+            Console.WriteLine($"Армія: {v.Army?.Name}");
+            Console.WriteLine($"Екіпаж: {string.Join(", ", v.CrewMembers.Select(c => $"{c.Rank} {c.Name}"))}");
+
+            switch (v)
             {
-                var tank = Tank.CreateRandom();
-                generatedVehicles.Add(tank);
-            });
-        }));
+                case TankModel tank:
+                    Console.WriteLine($"Вогнева міць: {tank.Firepower}");
+                    break;
+                case HelicopterModel heli:
+                    Console.WriteLine($"Швидкість: {heli.Speed}");
+                    break;
+                case DestroyerModel ship:
+                    Console.WriteLine($"Торпеди: {ship.Torpedoes}");
+                    break;
+            }
 
-        // Створення вертольотів
-        tasks.Add(Task.Run(() =>
-        {
-            Parallel.For(0, countPerType, _ =>
-            {
-                var helicopter = Helicopter.CreateRandom();
-                generatedVehicles.Add(helicopter);
-            });
-        }));
-
-        //Створення есмінців
-        tasks.Add(Task.Run(() =>
-        {
-            Parallel.For(0, countPerType, _ =>
-            {
-                var destroyer = Destroyer.CreateRandom();
-                generatedVehicles.Add(destroyer);
-            });
-        }));
-
-        await Task.WhenAll(tasks);
-
-        //Додаємо всі об'єкти у сервіс (через репозиторій)
-        foreach (var vehicle in generatedVehicles)
-        {
-            await crudServiceAsync.CreateAsync(vehicle);
+            Console.WriteLine();
         }
 
-        Console.WriteLine("\nСтворено об'єктів: " + generatedVehicles.Count);
+        Console.WriteLine("\nПеревірка стану бази даних:\n");
 
-        //Отримуємо всі об'єкти
-        var allVehicles = await crudServiceAsync.ReadAllAsync();
+        int armyCount = await context.Armies.CountAsync();
+        int crewCount = await context.CrewMembers.CountAsync();
+        int vehicleCount = await context.MilitaryVehicles.CountAsync();
+        int tankCount = await context.Tanks.CountAsync();
+        int heliCount = await context.Helicopters.CountAsync();
+        int destroyerCount = await context.Destroyers.CountAsync();
 
-        var tanks = allVehicles.OfType<Tank>().ToList();
-        var helicopters = allVehicles.OfType<Helicopter>().ToList();
-        var destroyers = allVehicles.OfType<Destroyer>().ToList();
-
-        Console.WriteLine("\nСтатистика:");
-
-        if (tanks.Any())
+        int linkCount = 0;
+        using (var cmd = context.Database.GetDbConnection().CreateCommand())
         {
-            Console.WriteLine($"Танки ({tanks.Count}):");
-            Console.WriteLine($"Мін. вогнева міць: {tanks.Min(t => t.Firepower)}");
-            Console.WriteLine($"Макс. вогнева міць: {tanks.Max(t => t.Firepower)}");
-            Console.WriteLine($"Середня вогнева міць: {tanks.Average(t => t.Firepower):F2}");
+            cmd.CommandText = "SELECT COUNT(*) FROM VehicleCrewMembers;";
+            await context.Database.OpenConnectionAsync();
+            var result = await cmd.ExecuteScalarAsync();
+            linkCount = Convert.ToInt32(result);
+            await context.Database.CloseConnectionAsync();
         }
 
-        if (helicopters.Any())
-        {
-            Console.WriteLine($"\nВертольоти ({helicopters.Count}):");
-            Console.WriteLine($"Мін. швидкість: {helicopters.Min(h => h.Speed)}");
-            Console.WriteLine($"Макс. швидкість: {helicopters.Max(h => h.Speed)}");
-            Console.WriteLine($"Середня швидкість: {helicopters.Average(h => h.Speed):F2}");
-        }
+        Console.WriteLine($"Армій: {armyCount}");
+        Console.WriteLine($"Членів екіпажу: {crewCount}");
+        Console.WriteLine($"Всього транспортних засобів: {vehicleCount}");
+        Console.WriteLine($"Танків: {tankCount}");
+        Console.WriteLine($"Гелікоптерів: {heliCount}");
+        Console.WriteLine($"Есмінців: {destroyerCount}");
+        Console.WriteLine($"Зв’язків Vehicle_Crew: {linkCount}");
 
-        if (destroyers.Any())
-        {
-            Console.WriteLine($"\nЕсмінці ({destroyers.Count}):");
-            Console.WriteLine($"Мін. к-сть торпед: {destroyers.Min(d => d.Torpedoes)}");
-            Console.WriteLine($"Макс. к-сть торпед: {destroyers.Max(d => d.Torpedoes)}");
-            Console.WriteLine($"Середня к-сть торпед: {destroyers.Average(d => d.Torpedoes):F2}");
-        }
-
-        Console.WriteLine("\nЗбереження у базу даних...");
-        await crudServiceAsync.SaveAsync();
+        Console.WriteLine("\nПеревірка завершена!\n");
 
         Console.WriteLine("\nНатисніть, щоб завершити програму...");
         Console.ReadLine();

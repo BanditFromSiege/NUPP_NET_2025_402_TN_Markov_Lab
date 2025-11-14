@@ -12,7 +12,7 @@ using System.Text.Json;
 
 namespace MilitaryVehicles.common
 {
-    public class CrudServiceAsync<T> : ICrudServiceAsync<T> where T : MilitaryVehicleModel
+    public class CrudServiceAsync<T> : ICrudServiceAsync<T> where T : class
     {
         private readonly IRepository<T> _repository;
         private readonly MilitaryVehiclesContext _context;
@@ -31,12 +31,9 @@ namespace MilitaryVehicles.common
 
         public async Task<T> ReadAsync(Guid id)
         {
-            T entity = await IncludeNavigation(_context.Set<T>()).FirstOrDefaultAsync(e => e.Id == id);
-
-            if (entity == null)
-                throw new KeyNotFoundException();
-
-            return entity;
+            return await _context.Set<T>()
+                .FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id)
+                ?? throw new KeyNotFoundException();
         }
 
         public async Task<IEnumerable<T>> ReadAllAsync()

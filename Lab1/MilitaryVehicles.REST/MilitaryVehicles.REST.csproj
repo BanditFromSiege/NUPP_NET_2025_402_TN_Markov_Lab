@@ -11,7 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MilitaryVehicles.common\MilitaryVehicles.common.csproj" />
     <ProjectReference Include="..\MilitaryVehicles.infrastructure\MilitaryVehicles.infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DB\" />
   </ItemGroup>
 
 </Project>

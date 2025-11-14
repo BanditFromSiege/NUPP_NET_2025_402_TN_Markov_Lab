@@ -1,60 +1,58 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MilitaryVehicles.common;
 using MilitaryVehicles.infrastructure;
 using MilitaryVehicles.infrastructure.Models;
 using MilitaryVehicles.REST.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace MilitaryVehicles.REST.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TanksController : ControllerBase
+    public class TankController : ControllerBase
     {
-        private readonly MilitaryVehiclesContext _context;
+        private readonly ICrudServiceAsync<TankModel> _tankService;
 
-        public TanksController(MilitaryVehiclesContext context)
+        public TankController(ICrudServiceAsync<TankModel> tankService)
         {
-            _context = context;
+            _tankService = tankService;
         }
 
-        // GET api/tanks
         [HttpGet]
         public async Task<IEnumerable<TankResponseModel>> GetAll()
         {
-            return await _context.Tanks
-                .Include(t => t.CrewMembers)
-                .Select(t => new TankResponseModel
-                {
-                    Id = t.Id,
-                    Model = t.Model,
-                    Firepower = t.Firepower,
-                    ArmyId = t.ArmyId,
-                    CrewMemberIds = t.CrewMembers.Select(c => c.Id).ToList()
-                })
-                .ToListAsync();
-        }
-
-        // GET api/tanks/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TankResponseModel>> Get(Guid id)
-        {
-            var t = await _context.Tanks
-                .Include(t => t.CrewMembers)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (t == null) return NotFound();
-
-            return new TankResponseModel
+            var tanks = await _tankService.ReadAllAsync();
+            return tanks.Select(t => new TankResponseModel
             {
                 Id = t.Id,
                 Model = t.Model,
                 Firepower = t.Firepower,
                 ArmyId = t.ArmyId,
                 CrewMemberIds = t.CrewMembers.Select(c => c.Id).ToList()
-            };
+            });
         }
 
-        // POST api/tanks
+        [HttpGet("{id}")]
+        public async Task<ActionResult<TankResponseModel>> Get(Guid id)
+        {
+            try
+            {
+                var t = await _tankService.ReadAsync(id);
+                return new TankResponseModel
+                {
+                    Id = t.Id,
+                    Model = t.Model,
+                    Firepower = t.Firepower,
+                    ArmyId = t.ArmyId,
+                    CrewMemberIds = t.CrewMembers.Select(c => c.Id).ToList()
+                };
+            }
+            catch
+            {
+                return NotFound();
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult> Create(TankCreateModel model)
         {
@@ -66,37 +64,47 @@ namespace MilitaryVehicles.REST.Controllers
                 ArmyId = model.ArmyId
             };
 
-            _context.Tanks.Add(tank);
-            await _context.SaveChangesAsync();
+            var created = await _tankService.CreateAsync(tank);
+            if (!created) return BadRequest();
 
             return CreatedAtAction(nameof(Get), new { id = tank.Id }, null);
         }
 
-        // PUT api/tanks/{id}
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(Guid id, TankUpdateModel model)
         {
-            var tank = await _context.Tanks.FindAsync(id);
-            if (tank == null) return NotFound();
+            try
+            {
+                var tank = await _tankService.ReadAsync(id);
+                tank.Model = model.Model;
+                tank.Firepower = model.Firepower;
 
-            tank.Model = model.Model;
-            tank.Firepower = model.Firepower;
+                var updated = await _tankService.UpdateAsync(tank);
+                if (!updated) return BadRequest();
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+                return NoContent();
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
 
-        // DELETE api/tanks/{id}
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
         {
-            var tank = await _context.Tanks.FindAsync(id);
-            if (tank == null) return NotFound();
+            try
+            {
+                var tank = await _tankService.ReadAsync(id);
+                var deleted = await _tankService.RemoveAsync(tank);
+                if (!deleted) return BadRequest();
 
-            _context.Tanks.Remove(tank);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+                return NoContent();
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
     }
 }

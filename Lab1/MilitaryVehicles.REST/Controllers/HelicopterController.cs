@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MilitaryVehicles.common;
 using MilitaryVehicles.infrastructure;
 using MilitaryVehicles.infrastructure.Models;
 using MilitaryVehicles.REST.Models;
@@ -8,48 +9,48 @@ namespace MilitaryVehicles.REST.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class HelicoptersController : ControllerBase
+    public class HelicopterController : ControllerBase
     {
-        private readonly MilitaryVehiclesContext _context;
+        private readonly ICrudServiceAsync<HelicopterModel> _helicopterService;
 
-        public HelicoptersController(MilitaryVehiclesContext context)
+        public HelicopterController(ICrudServiceAsync<HelicopterModel> helicopterService)
         {
-            _context = context;
+            _helicopterService = helicopterService;
         }
 
         [HttpGet]
         public async Task<IEnumerable<HelicopterResponseModel>> GetAll()
         {
-            return await _context.Helicopters
-                .Include(h => h.CrewMembers)
-                .Select(h => new HelicopterResponseModel
+            var helicopters = await _helicopterService.ReadAllAsync();
+            return helicopters.Select(h => new HelicopterResponseModel
+            {
+                Id = h.Id,
+                Model = h.Model,
+                Speed = h.Speed,
+                ArmyId = h.ArmyId,
+                CrewMemberIds = h.CrewMembers.Select(c => c.Id).ToList()
+            });
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<HelicopterResponseModel>> Get(Guid id)
+        {
+            try
+            {
+                var h = await _helicopterService.ReadAsync(id);
+                return new HelicopterResponseModel
                 {
                     Id = h.Id,
                     Model = h.Model,
                     Speed = h.Speed,
                     ArmyId = h.ArmyId,
                     CrewMemberIds = h.CrewMembers.Select(c => c.Id).ToList()
-                })
-                .ToListAsync();
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<HelicopterResponseModel>> Get(Guid id)
-        {
-            var heli = await _context.Helicopters
-                .Include(h => h.CrewMembers)
-                .FirstOrDefaultAsync(h => h.Id == id);
-
-            if (heli == null) return NotFound();
-
-            return new HelicopterResponseModel
+                };
+            }
+            catch
             {
-                Id = heli.Id,
-                Model = heli.Model,
-                Speed = heli.Speed,
-                ArmyId = heli.ArmyId,
-                CrewMemberIds = heli.CrewMembers.Select(c => c.Id).ToList()
-            };
+                return NotFound();
+            }
         }
 
         [HttpPost]
@@ -63,17 +64,8 @@ namespace MilitaryVehicles.REST.Controllers
                 ArmyId = model.ArmyId
             };
 
-            if (model.CrewMemberIds.Any())
-            {
-                var crewMembers = await _context.CrewMembers
-                    .Where(c => model.CrewMemberIds.Contains(c.Id))
-                    .ToListAsync();
-
-                helicopter.CrewMembers = crewMembers;
-            }
-
-            _context.Helicopters.Add(helicopter);
-            await _context.SaveChangesAsync();
+            var created = await _helicopterService.CreateAsync(helicopter);
+            if (!created) return BadRequest();
 
             return CreatedAtAction(nameof(Get), new { id = helicopter.Id }, null);
         }
@@ -81,40 +73,45 @@ namespace MilitaryVehicles.REST.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(Guid id, HelicopterUpdateModel model)
         {
-            var heli = await _context.Helicopters
-                .Include(h => h.CrewMembers)
-                .FirstOrDefaultAsync(h => h.Id == id);
-
-            if (heli == null) return NotFound();
-
-            if (model.Model != null) heli.Model = model.Model;
-            if (model.Speed.HasValue) heli.Speed = model.Speed.Value;
-            if (model.ArmyId.HasValue) heli.ArmyId = model.ArmyId.Value;
-
-            if (model.CrewMemberIds != null)
+            try
             {
-                var crew = await _context.CrewMembers
-                    .Where(c => model.CrewMemberIds.Contains(c.Id))
-                    .ToListAsync();
+                var helicopter = await _helicopterService.ReadAsync(id);
 
-                heli.CrewMembers = crew;
+                if (!string.IsNullOrEmpty(model.Model))
+                    helicopter.Model = model.Model;
+
+                if (model.Speed.HasValue)
+                    helicopter.Speed = model.Speed.Value;
+
+                if (model.ArmyId.HasValue)
+                    helicopter.ArmyId = model.ArmyId.Value;
+
+                var updated = await _helicopterService.UpdateAsync(helicopter);
+                if (!updated) return BadRequest();
+
+                return NoContent();
             }
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch
+            {
+                return NotFound();
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
         {
-            var heli = await _context.Helicopters.FindAsync(id);
-            if (heli == null) return NotFound();
+            try
+            {
+                var helicopter = await _helicopterService.ReadAsync(id);
+                var deleted = await _helicopterService.RemoveAsync(helicopter);
+                if (!deleted) return BadRequest();
 
-            _context.Helicopters.Remove(heli);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+                return NoContent();
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
     }
 }

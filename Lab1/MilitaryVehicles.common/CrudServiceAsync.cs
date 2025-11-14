@@ -1,131 +1,98 @@
-﻿using MilitaryVehicles.common;
+﻿using Microsoft.EntityFrameworkCore;
+using MilitaryVehicles.common;
+using MilitaryVehicles.infrastructure;
+using MilitaryVehicles.infrastructure.Models;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using MilitaryVehicles.infrastructure;
-using MilitaryVehicles.infrastructure.Models;
 
 namespace MilitaryVehicles.common
 {
     public class CrudServiceAsync<T> : ICrudServiceAsync<T> where T : MilitaryVehicleModel
     {
-        private readonly IRepository<T> repository;
+        private readonly IRepository<T> _repository;
+        private readonly MilitaryVehiclesContext _context;
 
-        public CrudServiceAsync(IRepository<T> repository)
+        public CrudServiceAsync(IRepository<T> repository, MilitaryVehiclesContext context)
         {
-            this.repository = repository;
+            _repository = repository;
+            _context = context;
         }
 
         public async Task<bool> CreateAsync(T element)
         {
-            try
-            {
-                await repository.AddAsync(element);
-                Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} доданий");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Помилка при додаванні {element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id}: {ex.Message}");
-                return false;
-            }
+            await _repository.AddAsync(element);
+            return true;
         }
 
         public async Task<T> ReadAsync(Guid id)
         {
-            try
-            {
-                var element = await repository.GetByIdAsync((int)(object)id);
-                if (element != null)
-                    return element;
+            T entity = await IncludeNavigation(_context.Set<T>()).FirstOrDefaultAsync(e => e.Id == id);
 
+            if (entity == null)
                 throw new KeyNotFoundException();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Помилка при читанні елемента з ідентифікатором {id}: {ex.Message}");
-                throw;
-            }
+
+            return entity;
         }
 
         public async Task<IEnumerable<T>> ReadAllAsync()
         {
-            try
-            {
-                return await repository.GetAllAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Помилка при отриманні списку {typeof(T).Name}: {ex.Message}");
-                return Enumerable.Empty<T>();
-            }
+            return await IncludeNavigation(_context.Set<T>()).ToListAsync();
         }
 
         public async Task<IEnumerable<T>> ReadAllAsync(int page, int amount)
         {
-            try
-            {
-                var all = await repository.GetAllAsync();
-                return all.Skip((page - 1) * amount).Take(amount);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Помилка при отриманні сторінки {page} {typeof(T).Name}: {ex.Message}");
-                return Enumerable.Empty<T>();
-            }
+            var all = await IncludeNavigation(_context.Set<T>()).ToListAsync();
+            return all.Skip((page - 1) * amount).Take(amount);
         }
 
         public async Task<bool> UpdateAsync(T element)
         {
-            try
-            {
-                await repository.Update(element);
-                Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} оновлено");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} не оновлено: {ex.Message}");
-                return false;
-            }
+            await _repository.Update(element);
+            return true;
         }
 
         public async Task<bool> RemoveAsync(T element)
         {
-            try
+            await _repository.Delete(element);
+            return true;
+        }
+
+        public Task<bool> SaveAsync() => Task.FromResult(true);
+        public Task<bool> LoadAsync() => Task.FromResult(true);
+
+        public IEnumerator<T> GetEnumerator() => ReadAllAsync().Result.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        //method for include navigation properties
+        private IQueryable<T> IncludeNavigation(DbSet<T> set)
+        {
+            if (typeof(T) == typeof(HelicopterModel))
             {
-                await repository.Delete(element);
-                Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} видалено");
-                return true;
+                return set.Cast<HelicopterModel>()
+                          .Include(h => h.CrewMembers)
+                          .AsQueryable() as IQueryable<T>;
             }
-            catch (Exception ex)
+            else if (typeof(T) == typeof(DestroyerModel))
             {
-                Console.WriteLine($"Не вдалося знайти {element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} для видалення: {ex.Message}");
-                return false;
+                return set.Cast<DestroyerModel>()
+                          .Include(d => d.CrewMembers)
+                          .AsQueryable() as IQueryable<T>;
             }
-        }
-
-        public Task<bool> SaveAsync()
-        {
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> LoadAsync()
-        {
-            return Task.FromResult(true);
-        }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            return ReadAllAsync().Result.GetEnumerator();
-        }
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+            else if (typeof(T) == typeof(TankModel))
+            {
+                return set.Cast<TankModel>()
+                          .Include(t => t.CrewMembers)
+                          .AsQueryable() as IQueryable<T>;
+            }
+            else
+            {
+                return set;
+            }
         }
     }
 }

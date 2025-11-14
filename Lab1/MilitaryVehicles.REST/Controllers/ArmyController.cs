@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MilitaryVehicles.common;
 using MilitaryVehicles.infrastructure;
 using MilitaryVehicles.infrastructure.Models;
 using MilitaryVehicles.REST.Models;
@@ -8,44 +9,42 @@ namespace MilitaryVehicles.REST.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ArmiesController : ControllerBase
+    public class ArmyController : ControllerBase
     {
-        private readonly MilitaryVehiclesContext _context;
+        private readonly ICrudServiceAsync<ArmyModel> _armyService;
 
-        public ArmiesController(MilitaryVehiclesContext context)
+        public ArmyController(ICrudServiceAsync<ArmyModel> armyService)
         {
-            _context = context;
+            _armyService = armyService;
         }
 
         [HttpGet]
         public async Task<IEnumerable<ArmyResponseModel>> GetAll()
         {
-            return await _context.Armies
-                .Include(a => a.Vehicles)
-                .Select(a => new ArmyResponseModel
-                {
-                    Id = a.Id,
-                    Name = a.Name,
-                    VehicleIds = a.Vehicles.Select(v => v.Id).ToList()
-                })
-                .ToListAsync();
+            var armies = await _armyService.ReadAllAsync();
+            return armies.Select(a => new ArmyResponseModel
+            {
+                Id = a.Id,
+                Name = a.Name
+            });
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ArmyResponseModel>> Get(Guid id)
         {
-            var army = await _context.Armies
-                .Include(a => a.Vehicles)
-                .FirstOrDefaultAsync(a => a.Id == id);
-
-            if (army == null) return NotFound();
-
-            return new ArmyResponseModel
+            try
             {
-                Id = army.Id,
-                Name = army.Name,
-                VehicleIds = army.Vehicles.Select(v => v.Id).ToList()
-            };
+                var a = await _armyService.ReadAsync(id);
+                return new ArmyResponseModel
+                {
+                    Id = a.Id,
+                    Name = a.Name
+                };
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
 
         [HttpPost]
@@ -57,8 +56,8 @@ namespace MilitaryVehicles.REST.Controllers
                 Name = model.Name
             };
 
-            _context.Armies.Add(army);
-            await _context.SaveChangesAsync();
+            var created = await _armyService.CreateAsync(army);
+            if (!created) return BadRequest();
 
             return CreatedAtAction(nameof(Get), new { id = army.Id }, null);
         }
@@ -66,25 +65,39 @@ namespace MilitaryVehicles.REST.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(Guid id, ArmyUpdateModel model)
         {
-            var army = await _context.Armies.FindAsync(id);
-            if (army == null) return NotFound();
+            try
+            {
+                var army = await _armyService.ReadAsync(id);
 
-            army.Name = model.Name;
-            await _context.SaveChangesAsync();
+                if (!string.IsNullOrEmpty(model.Name))
+                    army.Name = model.Name;
 
-            return NoContent();
+                var updated = await _armyService.UpdateAsync(army);
+                if (!updated) return BadRequest();
+
+                return NoContent();
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)
         {
-            var army = await _context.Armies.FindAsync(id);
-            if (army == null) return NotFound();
+            try
+            {
+                var army = await _armyService.ReadAsync(id);
+                var deleted = await _armyService.RemoveAsync(army);
+                if (!deleted) return BadRequest();
 
-            _context.Armies.Remove(army);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+                return NoContent();
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
     }
 }

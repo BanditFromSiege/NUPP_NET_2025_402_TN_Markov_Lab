@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MilitaryVehicles.common;
-using MilitaryVehicles.infrastructure;
 using MilitaryVehicles.infrastructure.Models;
 using MilitaryVehicles.REST.Models;
 
@@ -19,6 +18,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IEnumerable<TankResponseModel>> GetAll()
         {
             var tanks = await _tankService.ReadAllAsync();
@@ -33,6 +33,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<TankResponseModel>> Get(Guid id)
         {
             try
@@ -54,6 +55,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Create(TankCreateModel model)
         {
             var tank = new TankModel
@@ -71,12 +73,16 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Update(Guid id, TankUpdateModel model)
         {
             try
             {
                 var tank = await _tankService.ReadAsync(id);
-                tank.Model = model.Model;
+
+                if (!string.IsNullOrEmpty(model.Model))
+                    tank.Model = model.Model;
+
                 tank.Firepower = model.Firepower;
 
                 var updated = await _tankService.UpdateAsync(tank);
@@ -91,14 +97,15 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try
             {
                 var tank = await _tankService.ReadAsync(id);
                 var deleted = await _tankService.RemoveAsync(tank);
-                if (!deleted) return BadRequest();
 
+                if (!deleted) return BadRequest();
                 return NoContent();
             }
             catch

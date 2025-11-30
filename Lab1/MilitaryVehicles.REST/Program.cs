@@ -46,17 +46,91 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "MilitaryVehicles.REST",
+        Version = "v1"
+    });
+
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "Введіть JWT токен у форматі: Bearer {токен}",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped(typeof(ICrudServiceAsync<>), typeof(CrudServiceAsync<>));
 
 var app = builder.Build();
 
-using var scope = app.Services.CreateScope();
-var db = scope.ServiceProvider.GetRequiredService<MilitaryVehiclesContext>();
-Console.WriteLine($"Helicopters in DB: {db.Helicopters.Count()}");
-Console.WriteLine($"CrewMembers in DB: {db.CrewMembers.Count()}");
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<MilitaryVehiclesContext>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    db.Database.Migrate();
+
+    string[] roles = new[] { "User", "Editor", "Admin" };
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+
+    var adminEmail = "admin@example.com";
+    var admin = await userManager.FindByEmailAsync(adminEmail);
+    if (admin == null)
+    {
+        admin = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            FullName = "Super Admin"
+        };
+
+        var result = await userManager.CreateAsync(admin, "Admin123!");
+        if (!result.Succeeded)
+        {
+            Console.WriteLine("Помилка при створенні адміну: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+        else
+        {
+            await userManager.AddToRoleAsync(admin, "Admin");
+            Console.WriteLine("Admin user created: " + adminEmail);
+        }
+    }
+
+    Console.WriteLine($"Helicopters in DB: {db.Helicopters.Count()}");
+    Console.WriteLine($"CrewMembers in DB: {db.CrewMembers.Count()}");
+}
 
 if (app.Environment.IsDevelopment())
 {

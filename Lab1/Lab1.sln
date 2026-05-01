@@ -17,6 +17,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MilitaryVehicles.infrastruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilitaryVehicles.infrastructure", "MilitaryVehicles.infrastructure\MilitaryVehicles.infrastructure.csproj", "{96B55870-3AF9-4377-94F0-6676DF9FF9E4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MilitaryVehicles.REST", "MilitaryVehicles.REST", "{949F415B-F99D-48EA-9E91-49812FCB412F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilitaryVehicles.REST", "MilitaryVehicles.REST\MilitaryVehicles.REST.csproj", "{71233C1B-2054-42F0-A6C9-9669120BC00D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +39,10 @@ Global
 		{96B55870-3AF9-4377-94F0-6676DF9FF9E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96B55870-3AF9-4377-94F0-6676DF9FF9E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96B55870-3AF9-4377-94F0-6676DF9FF9E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71233C1B-2054-42F0-A6C9-9669120BC00D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71233C1B-2054-42F0-A6C9-9669120BC00D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71233C1B-2054-42F0-A6C9-9669120BC00D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71233C1B-2054-42F0-A6C9-9669120BC00D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,6 +54,8 @@ Global
 		{178889FE-FBCA-4D7F-BFDA-A159A797EFB2} = {68EA8034-ACAA-4A2A-ABE2-82DAB0D352CE}
 		{CF18EF76-784B-45FC-9DC6-97C6BDC66D0E} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 		{96B55870-3AF9-4377-94F0-6676DF9FF9E4} = {CF18EF76-784B-45FC-9DC6-97C6BDC66D0E}
+		{949F415B-F99D-48EA-9E91-49812FCB412F} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+		{71233C1B-2054-42F0-A6C9-9669120BC00D} = {949F415B-F99D-48EA-9E91-49812FCB412F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7413BCC0-C28A-4CC2-BA16-08F8B70560F7}

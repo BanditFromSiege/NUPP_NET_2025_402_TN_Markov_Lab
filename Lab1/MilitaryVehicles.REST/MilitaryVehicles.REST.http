@@ -1,0 +1,6 @@
+@MilitaryVehicles.REST_HostAddress = http://localhost:5179
+
+GET {{MilitaryVehicles.REST_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

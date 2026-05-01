@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MilitaryVehicles.common;
-using MilitaryVehicles.infrastructure;
 using MilitaryVehicles.infrastructure.Models;
 using MilitaryVehicles.REST.Models;
 
@@ -19,6 +18,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IEnumerable<DestroyerResponseModel>> GetAll()
         {
             var destroyers = await _destroyerService.ReadAllAsync();
@@ -33,6 +33,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<DestroyerResponseModel>> Get(Guid id)
         {
             try
@@ -54,6 +55,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Create(DestroyerCreateModel model)
         {
             var destroyer = new DestroyerModel
@@ -71,6 +73,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Update(Guid id, DestroyerUpdateModel model)
         {
             try
@@ -98,14 +101,15 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try
             {
                 var destroyer = await _destroyerService.ReadAsync(id);
                 var deleted = await _destroyerService.RemoveAsync(destroyer);
-                if (!deleted) return BadRequest();
 
+                if (!deleted) return BadRequest();
                 return NoContent();
             }
             catch

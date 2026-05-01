@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MilitaryVehicles.common;
-using MilitaryVehicles.infrastructure;
 using MilitaryVehicles.infrastructure.Models;
 using MilitaryVehicles.REST.Models;
 
@@ -19,6 +18,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IEnumerable<CrewMemberResponseModel>> GetAll()
         {
             var crewMembers = await _crewService.ReadAllAsync();
@@ -31,6 +31,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<CrewMemberResponseModel>> Get(Guid id)
         {
             try
@@ -50,6 +51,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Create(CrewMemberCreateModel model)
         {
             var crew = new CrewMemberModel
@@ -66,6 +68,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Update(Guid id, CrewMemberUpdateModel model)
         {
             try
@@ -90,6 +93,7 @@ namespace MilitaryVehicles.REST.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Editor,Admin")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try

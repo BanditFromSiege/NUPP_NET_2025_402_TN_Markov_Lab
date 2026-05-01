@@ -1,4 +1,9 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using MilitaryVehicles.common;
+using MilitaryVehicles.infrastructure;
+using MilitaryVehicles.infrastructure.Models;
+using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,161 +12,84 @@ using System.Text.Json;
 
 namespace MilitaryVehicles.common
 {
-    public class CrudServiceAsync<T> : ICrudServiceAsync<T> where T : MilitaryVehicle
+    public class CrudServiceAsync<T> : ICrudServiceAsync<T> where T : class
     {
-        private readonly ConcurrentDictionary<Guid, T> elements = new ConcurrentDictionary<Guid, T>();
-        private readonly string filePath;
-        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+        private readonly IRepository<T> _repository;
+        private readonly MilitaryVehiclesContext _context;
 
-        public CrudServiceAsync(string filePath)
+        public CrudServiceAsync(IRepository<T> repository, MilitaryVehiclesContext context)
         {
-            this.filePath = filePath;
+            _repository = repository;
+            _context = context;
         }
 
         public async Task<bool> CreateAsync(T element)
         {
-            if (elements.ContainsKey(element.Id))
-            {
-                Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} вже існує");
-                return false;
-            }
-
-            elements[element.Id] = element;
-            Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} доданий");
-            return await SaveAsync();
+            await _repository.AddAsync(element);
+            return true;
         }
 
         public async Task<T> ReadAsync(Guid id)
         {
-            if (elements.TryGetValue(id, out T element))
-            {
-                return element;
-            }
-
-            throw new KeyNotFoundException($"Елемент з ідентифікатором {id} не знайдено");
+            return await _context.Set<T>()
+                .FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id)
+                ?? throw new KeyNotFoundException();
         }
 
         public async Task<IEnumerable<T>> ReadAllAsync()
         {
-            return elements.Values.ToList();
+            return await IncludeNavigation(_context.Set<T>()).ToListAsync();
         }
 
         public async Task<IEnumerable<T>> ReadAllAsync(int page, int amount)
         {
-            return elements.Values.Skip((page - 1) * amount).Take(amount).ToList();
+            var all = await IncludeNavigation(_context.Set<T>()).ToListAsync();
+            return all.Skip((page - 1) * amount).Take(amount);
         }
 
         public async Task<bool> UpdateAsync(T element)
         {
-            if (elements.ContainsKey(element.Id))
-            {
-                elements[element.Id] = element;
-                Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} оновлено");
-                return await SaveAsync();
-            }
-
-            Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} не знайдено для оновлення");
-            return false;
+            await _repository.Update(element);
+            return true;
         }
 
         public async Task<bool> RemoveAsync(T element)
         {
-            if (elements.TryRemove(element.Id, out _))
-            {
-                Console.WriteLine($"{element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} видалено");
-                return await SaveAsync();
-            }
-
-            Console.WriteLine($"Не вдалося знайти {element.GetType().Name} моделі {element.Model} з ідентифікатором {element.Id} для видалення");
-            return false;
+            await _repository.Delete(element);
+            return true;
         }
 
-        public async Task<bool> SaveAsync()
+        public Task<bool> SaveAsync() => Task.FromResult(true);
+        public Task<bool> LoadAsync() => Task.FromResult(true);
+
+        public IEnumerator<T> GetEnumerator() => ReadAllAsync().Result.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        //method for include navigation properties
+        private IQueryable<T> IncludeNavigation(DbSet<T> set)
         {
-            await semaphore.WaitAsync();
-            try
+            if (typeof(T) == typeof(HelicopterModel))
             {
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Converters = { new MilitaryVehicleConverter() },
-                    PropertyNamingPolicy = null,
-                    PropertyNameCaseInsensitive = true
-                };
-
-                var list = elements.Values.ToList();
-
-                string json = JsonSerializer.Serialize(list, options);
-
-                await File.WriteAllTextAsync(filePath, json);
-                Console.WriteLine("Дані збережені у файл");
-
-                return true;
+                return set.Cast<HelicopterModel>()
+                          .Include(h => h.CrewMembers)
+                          .AsQueryable() as IQueryable<T>;
             }
-            catch (Exception ex)
+            else if (typeof(T) == typeof(DestroyerModel))
             {
-                Console.WriteLine($"Помилка при збереженні даних у файл: {ex.Message}");
-                return false;
+                return set.Cast<DestroyerModel>()
+                          .Include(d => d.CrewMembers)
+                          .AsQueryable() as IQueryable<T>;
             }
-            finally
+            else if (typeof(T) == typeof(TankModel))
             {
-                semaphore.Release();
+                return set.Cast<TankModel>()
+                          .Include(t => t.CrewMembers)
+                          .AsQueryable() as IQueryable<T>;
             }
-        }
-
-        public async Task<bool> LoadAsync()
-        {
-            await semaphore.WaitAsync();
-            try
+            else
             {
-                if (File.Exists(filePath))
-                {
-                    var json = await File.ReadAllTextAsync(filePath);
-
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-                    options.Converters.Add(new MilitaryVehicleConverter());
-
-                    var loadedElements = JsonSerializer.Deserialize<List<T>>(json, options);
-
-                    if (loadedElements != null)
-                    {
-                        elements.Clear();
-                        foreach (var element in loadedElements)
-                        {
-                            elements[element.Id] = element;
-                        }
-                        Console.WriteLine("Дані завантажено з файлу");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Файл не знайдено, новий файл буде створено при збереженні");
-                }
-
-                return true;
+                return set;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Помилка при завантаженні даних з файлу: {ex.Message}");
-                return false;
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            return elements.Values.GetEnumerator();
-        }
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }
